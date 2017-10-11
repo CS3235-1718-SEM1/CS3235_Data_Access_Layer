@@ -4,8 +4,11 @@ name = "pypi"
 verify_ssl = true
 
 [packages]
+
 flask = "*"
 gunicorn = "*"
+"flask-sqlalchemy" = "*"
+sqlalchemy = "*"
 
 
 [dev-packages]
