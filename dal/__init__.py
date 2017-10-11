@@ -1,12 +1,12 @@
 """
 Data Access Layer abstracts database accesses by exposing a RESTful API
 """
+import os
 from flask import Flask, request, jsonify, json
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-# TODO: extract this to config file, one for development and another for production
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres:///cs3235'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgres:///cs3235')
 
 db = SQLAlchemy(app)
 
