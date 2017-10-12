@@ -4,11 +4,13 @@ Data Access Layer abstracts database accesses by exposing a RESTful API
 import os
 from flask import Flask, request, jsonify, json
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgres:///cs3235')
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # Import models only after db is defined so that the DB schema can be properly setup
 from . import models
