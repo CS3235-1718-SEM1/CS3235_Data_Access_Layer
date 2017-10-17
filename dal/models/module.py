@@ -1,5 +1,4 @@
 from .. import db
-from .enrolment import enrolments
 
 
 class Module(db.Model):
@@ -8,5 +7,5 @@ class Module(db.Model):
     code = db.Column(db.String(16), primary_key=True)
 
     def __repr__(self):
-        return '<User {}>'.format(self.code)
+        return '<Module {}>'.format(self.code)
 
