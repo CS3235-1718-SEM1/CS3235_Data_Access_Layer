@@ -16,7 +16,7 @@ migrate = Migrate(app, db)
 
 # Import models only after db is defined so that the DB schema can be properly setup
 from .models import *
-
+# from .models import db_population # un-comment to populate db
 
 IVLE_LAPI_ROOT_URL = 'https://ivle.nus.edu.sg/api/Lapi.svc'
 IVLE_LAPI_ENDPOINTS = {
