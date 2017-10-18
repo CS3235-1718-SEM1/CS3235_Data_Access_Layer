@@ -111,6 +111,6 @@ def can_access_door():
     room = Room.query.filter_by(door_id=door_id).first()
     for module_taken in user.enrolments:
         if module_taken in room.modules_allowed:
-            return jsonify({'result': True})
+            return jsonify({'result': True, 'success': True})
 
-    return jsonify({'result': False})
+    return jsonify({'result': False, 'success': True})
