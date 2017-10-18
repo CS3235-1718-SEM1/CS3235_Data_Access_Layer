@@ -49,22 +49,22 @@ def register_user():
     :return:
     """
     post_data = request.json
-    auth_token, ivle_id = post_data['IVLE_auth', 'IVLE_id']
+    auth_token, ivle_id = post_data['IVLE_auth'], post_data['IVLE_id']
 
     # Check if the auth_token is legit
-    resp = requests.get(IVLE_LAPI_ENDPOINTS['validate_token'].format(auth_token))
+    resp = requests.get(IVLE_LAPI_ENDPOINTS['validate_token'].format(auth_token=auth_token))
     resp_json = resp.json()
     if not resp_json['Success']:
         return jsonify({'success': False}), 401
 
     # Check if the claimed ivle_id indeed belongs to the user
-    resp = requests.get(IVLE_LAPI_ENDPOINTS['get_user_id'].format(auth_token))
+    resp = requests.get(IVLE_LAPI_ENDPOINTS['get_user_id'].format(auth_token=auth_token))
     resp_json = resp.json()
     if resp_json != ivle_id:
         return jsonify({'success': False}), 401
 
     # Get modules this user is taking
-    resp = requests.get(IVLE_LAPI_ENDPOINTS['get_user_modules'].format(auth_token))
+    resp = requests.get(IVLE_LAPI_ENDPOINTS['get_user_modules'].format(auth_token=auth_token))
     resp_json = resp.json()
     module_codes = [module['CourseCode'] for module in resp_json['Results']]
 
@@ -77,7 +77,8 @@ def register_user():
     new_user = User(ivle_id=ivle_id)
     for module_code in module_codes:
         module = Module.query.filter_by(code=module_code).first()
-        new_user.enrolments.append(module)
+        if module:
+            new_user.enrolments.append(module)
     db.session.add(new_user)
     db.session.commit()
 

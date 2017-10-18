@@ -9,5 +9,5 @@ class User(db.Model):
     enrolments = db.relationship('Module', secondary=enrolments, lazy='subquery', backref=db.backref('users', lazy=True))
 
     def __repr__(self):
-        return '<User {}>'.format(self.ivle_user_id)
+        return '<User {}>'.format(self.ivle_id)
 
