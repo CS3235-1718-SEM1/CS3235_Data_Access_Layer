@@ -15,11 +15,12 @@ lapi_key = os.getenv('LAPI_KEY', '')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+from .helper import *
 # Import models only after db is defined so that the DB schema can be properly setup
 from .models import *
 from .models import db_population
 # db_population.populate_module_list()  # uncomment to populate module list
-db_population.populate_rooms()  # uncomment to populate rooms
+# db_population.populate_rooms()  # uncomment to populate rooms
 
 IVLE_LAPI_ROOT_URL = 'https://ivle.nus.edu.sg/api/Lapi.svc'
 IVLE_LAPI_ENDPOINTS = {
@@ -91,6 +92,25 @@ def register_user():
 
     return jsonify({'success': True, 'secret_key': random_base32})
 
+
 @app.route('/can_access_door', methods=['POST'])
 def can_access_door():
-    pass
+    """
+    Check if a particular user can access a room with a specified door_id
+    :return:
+    """
+    post_data = request.json
+    door_id, ivle_id, otp = post_data['door_id'], post_data['IVLE_id'], post_data['otp']
+
+    user = User.query.filter_by(ivle_id=ivle_id).first()
+    # TODO: think about how to protect against otp brute-forcing. A 10^6 keyspace is not hard to brute-force in under 30s.
+    is_otp_valid = validate_otp(user.secret_key, otp)
+    if not is_otp_valid:
+        return jsonify({'success': False}), 400
+
+    room = Room.query.filter_by(door_id=door_id).first()
+    for module_taken in user.enrolments:
+        if module_taken in room.modules_allowed:
+            return jsonify({'result': True})
+
+    return jsonify({'result': False})
