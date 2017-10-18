@@ -2,7 +2,8 @@
 Data Access Layer abstracts database accesses by exposing a RESTful API
 """
 import os
-from flask import Flask, request, jsonify, json
+import base64
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import requests
@@ -74,7 +75,11 @@ def register_user():
     if user_from_db is not None:
         return jsonify({'success': False}), 403
 
-    new_user = User(ivle_id=ivle_id)
+    random_bytes = os.urandom(24)
+    random_base32 = base64.b32encode(random_bytes).decode()
+
+    # Create the user and enrolments in DB
+    new_user = User(ivle_id=ivle_id, secret_key=random_base32)
     for module_code in module_codes:
         module = Module.query.filter_by(code=module_code).first()
         if module:
@@ -82,7 +87,4 @@ def register_user():
     db.session.add(new_user)
     db.session.commit()
 
-    # Add secret_key to User model?
-    # Clarify secret_key and OTP generation mechanism
-
-    return jsonify({'success': True, 'secret_key': 'stub'})
+    return jsonify({'success': True, 'secret_key': random_base32})
