@@ -6,6 +6,7 @@ import json
 
 from .. import db
 from .module import Module
+from .room import Room
 
 
 def populate_module_list():
@@ -20,4 +21,11 @@ def populate_module_list():
 
 
 def populate_rooms():
-    pass
+    room1 = Room(door_id='1')
+    room2 = Room(door_id='2')
+
+    cs3235 = Module.query.filter_by(code='CS3235').first()
+    room1.modules_allowed.append(cs3235)
+    db.session.add(room1)
+    db.session.add(room2)
+    db.session.commit()

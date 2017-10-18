@@ -10,14 +10,16 @@ import requests
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgres:///cs3235')
-lapi_key = os.getenv('LAPI_KEY')
+lapi_key = os.getenv('LAPI_KEY', '')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 # Import models only after db is defined so that the DB schema can be properly setup
 from .models import *
-# from .models import db_population # un-comment to populate db
+from .models import db_population
+# db_population.populate_module_list()  # uncomment to populate module list
+db_population.populate_rooms()  # uncomment to populate rooms
 
 IVLE_LAPI_ROOT_URL = 'https://ivle.nus.edu.sg/api/Lapi.svc'
 IVLE_LAPI_ENDPOINTS = {
@@ -88,3 +90,7 @@ def register_user():
     db.session.commit()
 
     return jsonify({'success': True, 'secret_key': random_base32})
+
+@app.route('/can_access_door', methods=['POST'])
+def can_access_door():
+    pass
