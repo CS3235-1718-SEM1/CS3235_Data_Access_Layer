@@ -110,7 +110,7 @@ def can_access_door():
     curr_time = datetime.utcnow()
     time_elapsed = curr_time - user.last_room_access_request_time
 
-    if time_elapsed.total_seconds() < 10 and time_elapsed.microseconds < OTP_VALIDATION_TTW:
+    if time_elapsed.total_seconds() < 1 and time_elapsed.microseconds < OTP_VALIDATION_TTW:
         return jsonify({'success': False, 'error': 'Please try the request again after 0.3 second'})
 
     is_otp_valid = validate_otp(user.secret_key, otp)
