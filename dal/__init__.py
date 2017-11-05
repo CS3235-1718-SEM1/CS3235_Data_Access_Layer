@@ -3,6 +3,7 @@ Data Access Layer abstracts database accesses by exposing a RESTful API
 """
 import os
 import base64
+from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -29,6 +30,8 @@ IVLE_LAPI_ENDPOINTS = {
     'get_user_modules': IVLE_LAPI_ROOT_URL + '/Modules?APIKey=' + lapi_key + '&AuthToken={auth_token}'
                                                                              '&Duration=0&IncludeAllInfo=false'
 }
+OTP_VALIDATION_TTW = 333333  # time to wait before validating another OTP (in microseconds)
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -97,14 +100,22 @@ def register_user():
 def can_access_door():
     """
     Check if a particular user can access a room with a specified door_id
-    :return:
+
+    To protect against OTP brute-forcing, for each user this endpoint will only accept 3 guesses per second
     """
     post_data = request.json
     door_id, ivle_id, otp = post_data['door_id'], post_data['IVLE_id'], post_data['otp']
 
     user = User.query.filter_by(ivle_id=ivle_id).first()
-    # TODO: think about how to protect against otp brute-forcing. A 10^6 keyspace is not hard to brute-force in under 30s.
+    curr_time = datetime.utcnow()
+    time_elapsed = curr_time - user.last_room_access_request_time
+
+    if time_elapsed.total_seconds() < 10 and time_elapsed.microseconds < OTP_VALIDATION_TTW:
+        return jsonify({'success': False, 'error': 'Please try the request again after 0.3 second'})
+
     is_otp_valid = validate_otp(user.secret_key, otp)
+    user.last_room_access_request_time = curr_time
+    db.session.commit()
     if not is_otp_valid:
         return jsonify({'success': False}), 400
 
