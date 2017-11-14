@@ -10,4 +10,8 @@ INSERT INTO modules VALUES ('CS1020');
 
 INSERT INTO rooms VALUES('1');
 INSERT INTO rooms VALUES('2');
+INSERT INTO rooms VALUES('com1-01-qr');
+INSERT INTO rooms VALUES('com1-01-rfid');
 INSERT INTO room_accesses VALUES ('CS3235', '1');
+INSERT INTO room_accesses VALUES ('CS3235', 'com1-01-qr');
+INSERT INTO room_accesses VALUES ('CS3235', 'com1-01-rfid');
