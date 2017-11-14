@@ -3,6 +3,7 @@ Data Access Layer abstracts database accesses by exposing a RESTful API
 """
 import os
 import base64
+import pprint
 from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -56,29 +57,39 @@ def register_user():
     :return:
     """
     post_data = request.json
+    # logging request
+    print('The request received for /register_user:')
+    pprint.pprint(post_data)
     auth_token, ivle_id = post_data['IVLE_auth'], post_data['IVLE_id']
 
     # Check if the auth_token is legit
     resp = requests.get(IVLE_LAPI_ENDPOINTS['validate_token'].format(auth_token=auth_token))
     resp_json = resp.json()
     if not resp_json['Success']:
+        print('Failed response from IVLE validate auth_token:')
+        pprint.pprint(resp_json)
         return jsonify({'success': False}), 401
 
     # Check if the claimed ivle_id indeed belongs to the user
     resp = requests.get(IVLE_LAPI_ENDPOINTS['get_user_id'].format(auth_token=auth_token))
     resp_json = resp.json()
     if resp_json != ivle_id:
+        print('IVLE_ID doesn\'t belong to the user')
+        pprint.pprint(resp_json)
         return jsonify({'success': False}), 401
 
     # Get modules this user is taking
     resp = requests.get(IVLE_LAPI_ENDPOINTS['get_user_modules'].format(auth_token=auth_token))
     resp_json = resp.json()
     module_codes = [module['CourseCode'] for module in resp_json['Results']]
+    print('The modules this user is taking:')
+    pprint.pprint(module_codes)
 
     # Register this user in the system w/ the corresponding modules
     # First check if it exists in the DB
     user_from_db = User.query.filter_by(ivle_id=ivle_id).first()
     if user_from_db is not None:
+        print('User ' + ivle_id + ' already exists in the DB')
         return jsonify({'success': False}), 403
 
     random_bytes = os.urandom(24)
@@ -104,6 +115,8 @@ def can_access_door():
     To protect against OTP brute-forcing, for each user this endpoint will only accept 3 guesses per second
     """
     post_data = request.json
+    print('The request received for /can_access_door:')
+    pprint.pprint(post_data)
     door_id, ivle_id, otp = post_data['door_id'], post_data['IVLE_id'], post_data['otp']
 
     user = User.query.filter_by(ivle_id=ivle_id).first()
@@ -111,12 +124,14 @@ def can_access_door():
     time_elapsed = curr_time - user.last_room_access_request_time
 
     if time_elapsed.total_seconds() < 1 and time_elapsed.microseconds < OTP_VALIDATION_TTW:
+        print('Can\'t send too many requests in 1s. Try again in a bit')
         return jsonify({'success': False, 'error': 'Please try the request again after 0.3 second'})
 
-    is_otp_valid = validate_otp(user.secret_key, otp)
+    is_otp_valid, otp_now = validate_otp(user.secret_key, otp)
     user.last_room_access_request_time = curr_time
     db.session.commit()
     if not is_otp_valid:
+        print('OTP is invalid. Given: ' + otp + '. Expected: ' + otp_now)
         return jsonify({'success': False}), 400
 
     room = Room.query.filter_by(door_id=door_id).first()
@@ -124,4 +139,5 @@ def can_access_door():
         if module_taken in room.modules_allowed:
             return jsonify({'result': True, 'success': True})
 
+    print('User has no access to this room')
     return jsonify({'result': False, 'success': True})

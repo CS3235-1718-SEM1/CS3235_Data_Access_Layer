@@ -3,4 +3,4 @@ import pyotp
 
 def validate_otp(secret, otp):
     totp = pyotp.TOTP(secret)
-    return totp.verify(otp)
+    return totp.verify(otp), totp.now()
